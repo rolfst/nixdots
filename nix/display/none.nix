@@ -1,0 +1,5 @@
+# Common Nix
+{ ... }:
+{
+  imports = [ ];
+}

@@ -1,0 +1,15 @@
+# very meta. bot to update bot actions
+version: 2
+updates:
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    commit-message:
+      prefix: "🤖: "
+  - package-ecosystem: "cargo"
+    directory: "/dots-manager"
+    schedule:
+      interval: "weekly"
+    commit-message:
+      prefix: "🤖: "

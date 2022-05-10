@@ -1,0 +1,69 @@
+name: "build isos"
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "30 9 * * 2"
+
+jobs:
+  build-live:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    - name: "provision home-mananger"
+      uses: ./.github/actions/runner
+      id: runner
+
+    - name: "build public iso"
+      run: |
+        # TODO: Find how to set dotfiles
+        env
+        export DOTFILES="$(pwd)"
+        env
+        nix run ".#live"
+      shell: fish {0}
+
+    - name: "provide default iso"
+      uses: actions/upload-artifact@v3
+      with:
+        name: live-iso
+        path: result/iso/*.iso
+
+  build-docker:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+    - uses: actions/checkout@v3
+    - name: "provision home-mananger"
+      uses: ./.github/actions/runner
+      id: runner
+      with:
+        nix-features: 'nixos-test benchmark big-parallel kvm'
+
+    - name: "build docker runner"
+      run: |
+        export DOTFILES="$(pwd)"
+        + docker
+        dots-docker
+        docker tag dots-docker ghcr.io/${{ github.actor }}/dots
+      shell: fish {0}
+
+    - name: Log in to the Container registry
+      uses: docker/login-action@v2
+      with:
+        registry: ghcr.io
+        username: ${{ github.actor }}
+        password: ${{ secrets.GHCR_TOKEN }}
+
+    - name: Docker meta
+      id: docker-meta
+      uses: docker/metadata-action@v4
+      with:
+        images: ghcr.io/${{ github.actor }}/dots
+        tags: latest
+
+    - name: Push Docker image
+      run: docker push ${{ steps.docker-meta.outputs.tags }}
